@@ -1,18 +1,33 @@
 # SpurDesk - AI-Powered Customer Support Platform
 
-SpurDesk is a production-ready customer support chat platform designed to simulate a live customer support chat widget. An AI agent, powered by **Gemini 2.5 Flash**, answers user questions using real-time store policy documentation fetched dynamically from a database-driven Knowledge Base.
+SpurDesk is a modular AI-powered customer support platform designed to simulate a modern live support experience while demonstrating scalable backend architecture and clean engineering practices. An AI agent, powered by **Gemini 2.5 Flash**, answers user questions using real-time store policy documentation fetched dynamically from a database-driven Knowledge Base.
 
 > [!NOTE]
-> For a deep-dive into the backend service patterns, request pipelines, caching logic, error retries, and future scaling plans, please refer to the detailed **[Technical Architecture & Engineering Decisions Documentation](file:///home/Krishna-Singh/AssistFlow/documentation/architecture_and_decisions.md)**.
+> For a deep-dive into the backend service patterns, request pipelines, caching logic, error retries, and future scaling plans, please refer to the detailed **[Technical Architecture & Engineering Decisions](./documentation/architecture_and_decisions.md)**.
+
+## Live Demo
+- **Frontend**: [https://assist-flow-ten.vercel.app](https://assist-flow-ten.vercel.app)
+- **Backend API**: [https://assistflow-mtk9.onrender.com](https://assistflow-mtk9.onrender.com)
+
+## Preview
+![Chat Interface](./assets/chat.png)
+![Conversation Sidebar](./assets/sidebar.png)
 
 ---
 
 ## 1. Overview
-SpurDesk simulates the foundational architecture of an automated customer engagement platform. It demonstrates:
+SpurDesk simulates the foundational architecture of an automated customer engagement platform. The system is intentionally designed around modular services and provider abstractions so that additional channels (e.g., WhatsApp, Instagram, or Facebook Messenger) can be integrated with minimal changes to the conversation orchestration layer. It demonstrates:
 - Persistent chat sessions that survive browser reloads.
 - An extensible **LLM Provider Abstraction** designed for swapping providers (Gemini, OpenAI, Claude).
 - A **Knowledge Retrieval** system that queries FAQs from a database rather than hardcoding business rules in system prompts.
 - Operational design patterns suitable for a high-availability customer service environment.
+
+## Engineering Principles
+- **Thin Controllers, Rich Services**: Keep controllers slim and isolated; encapsulate business logic entirely within dedicated services.
+- **Composition over Coupling**: Prefer composition and decoupled helper abstractions over tightly coupled implementations.
+- **LLM as Infrastructure**: Treat LLM providers as interchangeable infrastructure (abstracted behind clean interfaces and factories).
+- **Externalize Knowledge**: Keep knowledge base facts outside model prompts whenever possible to maximize context window efficiency and maintainability.
+- **Graceful Failures**: Anticipate API timeouts, quota limits, and network dropouts by implementing robust try/catch fallback protections.
 
 ---
 
@@ -165,7 +180,27 @@ Fetch all previous conversation sessions.
 
 ### Request Pipeline Flow
 ```
-Client ──► POST /chat/message ──► ChatController ──► ConversationService ──► KnowledgeService ──► ProviderFactory ──► OpenAI / Claude / Gemini ──► Prisma ──► SQLite
+┌──────────────────────────┐
+│      Next.js Frontend    │
+└─────────────┬────────────┘
+              │
+              ▼
+      POST /api/chat/message
+              │
+              ▼
+       ChatController
+              │
+              ▼
+    ConversationService
+        ┌─────┴─────┐
+        ▼           ▼
+KnowledgeService  Repository
+        │           │
+        ▼           ▼
+ ProviderFactory   Prisma
+        │           │
+        ▼           ▼
+Gemini/OpenAI   SQLite/Postgres
 ```
 
 ### 1. Repository & Service Pattern
@@ -199,14 +234,39 @@ The backend constructs Gemini input as follows:
 ## 11. Tradeoffs
 - **SQLite for Local Dev**: We chose SQLite to give reviewers an instant dev environment. Switching to PostgreSQL for production is straightforward and only requires changing the datasource provider string in `schema.prisma`.
 - **Simple Keyword Substring Matching**: We check keywords using `toLowerCase().includes()`. While simple, it executes fast and avoids the overhead of setting up a local vector DB index for a 5-entry FAQ set.
+- **Redis Fallback**: Redis is optional for local development. If unavailable, SpurDesk transparently falls back to a local in-memory Map cache to reduce setup complexity while preserving application functionality.
+- **No Streaming Responses**: For simplicity and deterministic request handling, responses are returned after full generation rather than streamed token-by-token.
 
 ---
 
-## 12. Future Improvements ("If I had more time...")
-- **Streaming Responses**: Deliver AI text tokens in real-time as they generate to reduce perceived user latency.
-- **Semantic Retrieval with Embeddings (RAG)**: Swap keyword matching for a vector database (e.g. pgvector) to retrieve accurate policies even with synonyms.
-- **Redis Distributed Cache**: Scale session data and rate limits across horizontally scaled server instances in production.
-- **Rate Limiting per Session**: Limit queries per sessionId to prevent malicious API budget drain.
-- **Conversation Summarization**: Summarize history beyond 15 messages to conserve token context limits.
-- **Citation-Aware RAG**: Inline links to sources/policies inside AI answers to improve user transparency.
-- **Better Observability**: Integrate tools like OpenTelemetry or LangSmith to trace latency, cost, and response quality.
+## 12. If I Had More Time
+
+- **Streaming Responses**
+  Stream tokens incrementally from the LLM to reduce perceived latency and improve conversational UX.
+
+- **Semantic Retrieval (Embeddings + pgvector)**
+  Replace keyword matching with vector similarity search to retrieve relevant knowledge even for semantically similar queries.
+
+- **Admin Knowledge Management**
+  Build an internal dashboard allowing support teams to create, edit, and version FAQ entries without touching the database directly.
+
+- **Conversation Analytics**
+  Track frequently asked questions, average response latency, conversation success rate, and escalation frequency.
+
+- **Human Handoff Workflow**
+  Allow conversations to be seamlessly transferred from SpurBot to a live support representative while preserving context.
+
+- **Redis Distributed Cache**
+  Share cache state across horizontally scaled backend instances.
+
+- **Per-Session Rate Limiting**
+  Protect API budgets and prevent abuse by enforcing configurable request quotas.
+
+- **Conversation Summarization**
+  Compress long conversations into summaries to reduce token usage while maintaining context.
+
+- **Citation-Aware Retrieval**
+  Include references to the originating knowledge base entries to improve transparency and trust.
+
+- **OpenTelemetry Observability**
+  Add distributed tracing, latency metrics, provider cost tracking, and structured monitoring dashboards.
