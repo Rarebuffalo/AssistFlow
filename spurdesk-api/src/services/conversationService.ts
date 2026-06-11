@@ -83,7 +83,8 @@ export class ConversationService {
         reply: aiReply,
         sessionId: conversationId,
         conversationTitle: title,
-        error: true
+        error: true,
+        errorDetails: error.message || String(error)
       };
     }
 
