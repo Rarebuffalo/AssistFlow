@@ -6,7 +6,7 @@
     "install:all": "npm install --prefix spurdesk-api && npm install --prefix spurdesk-web",
     "dev:api": "npm run dev --prefix spurdesk-api",
     "dev:web": "npm run dev --prefix spurdesk-web",
-    "dev": "npm run install:all && npx -y concurrently \"npm run dev:api\" \"npm run dev:web\""
+    "dev": "npx -y concurrently \"npm run dev:api\" \"npm run dev:web\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
