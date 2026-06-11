@@ -24,6 +24,7 @@ const chatController = new ChatController(conversationService);
 
 // Bind routing endpoints
 router.get('/conversations', chatController.getConversations);
+router.get('/test-models', chatController.testModels);
 router.post('/message', validateMessageInput, chatController.postMessage);
 router.get('/history/:sessionId', chatController.getHistory);
 

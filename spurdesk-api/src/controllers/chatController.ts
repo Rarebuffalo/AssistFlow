@@ -50,6 +50,36 @@ export class ChatController {
     }
   };
 
+  testModels = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(400).json({ error: true, message: 'GEMINI_API_KEY is not defined in environment variables.' });
+      }
+      
+      const { GoogleGenerativeAI } = require('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(apiKey);
+      
+      console.log('[Diagnostic] Listing models...');
+      const modelList = await genAI.listModels();
+      
+      res.json({
+        success: true,
+        message: 'Successfully connected and retrieved models list.',
+        keyPrefix: apiKey.slice(0, 6) + '...',
+        models: modelList.models.map((m: any) => m.name)
+      });
+    } catch (err: any) {
+      console.error('[Diagnostic] Failed to list models:', err);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to retrieve models list.',
+        keyPrefix: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.slice(0, 6) + '...' : 'none',
+        error: err.message || String(err)
+      });
+    }
+  };
+
   // --- Extensibility: Example Channel Integrations ---
   // postWhatsAppMessage = async (req: Request, res: Response, next: NextFunction) => {
   //   try {
