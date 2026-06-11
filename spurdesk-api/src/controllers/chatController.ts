@@ -60,8 +60,9 @@ export class ChatController {
       const { GoogleGenerativeAI } = require('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(apiKey);
       
-      console.log('[Diagnostic] Calling gemini-1.5-flash...');
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      console.log(`[Diagnostic] Calling ${modelName}...`);
+      const model = genAI.getGenerativeModel({ model: modelName });
       const response = await model.generateContent('Hi');
       const text = response.response.text();
       

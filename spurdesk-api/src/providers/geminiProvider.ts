@@ -11,7 +11,7 @@ export class GeminiProvider implements LLMProvider {
       throw new Error('GEMINI_API_KEY environment variable is not defined.');
     }
     this.genAI = new GoogleGenerativeAI(apiKey);
-    this.modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+    this.modelName = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
   }
 
   async generateReply(messages: LLMMessage[]): Promise<string> {
